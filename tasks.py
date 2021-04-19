@@ -5,16 +5,24 @@ import asyncio
 import re
 
 class Tasks:
-  def __init__(self, bot, non_roll_channel, roll_channel,\
+  def __init__(self, bot, non_roll_channel, roll_channel, pokemon_channel,\
     claim_reset, claim_available,\
-    num_rolls_left, rolls_reset):
+    num_rolls_left, rolls_reset,\
+    daily_available, daily_reset,\
+    dk_available, dk_reset, p_available):
     self.bot = bot
     self.non_roll_channel = non_roll_channel
     self.roll_channel = roll_channel
+    self.pokemon_channel = pokemon_channel
     self.claim_reset = claim_reset
     self.claim_available = claim_available
     self.num_rolls_left = num_rolls_left
     self.rolls_reset = rolls_reset
+    self.daily_available = daily_available
+    self.daily_reset = daily_reset
+    self.dk_available = dk_available
+    self.dk_reset = dk_reset
+    self.p_available = p_available
     self.msgka = {}
 
   async def wait_for_claim(self):
@@ -23,6 +31,37 @@ class Tasks:
       await asyncio.sleep(x)
       self.claim_reset += datetime.timedelta(seconds=config.CLAIM_DURATION_SECS)
       self.claim_available = True
+  
+  async def wait_for_daily(self):
+    if not self.daily_available and not self.daily_reset: return
+    while True:
+      if self.daily_available:
+        await self.non_roll_channel.send(f'{config.COMMAND_PREFIX}daily')
+      x = (self.daily_reset - datetime.datetime.now()).total_seconds()
+      self.daily_reset += datetime.timedelta(seconds=config.DAILY_DURATION_SECS)
+      print(f'wait for daily sleeping for {x} seconds till next daily reset')
+      await asyncio.sleep(x)
+      self.daily_available = True
+
+  async def wait_for_dk(self):
+    if not self.dk_available and not self.dk_reset: return
+    while True:
+      if self.dk_available:
+        await self.non_roll_channel.send(f'{config.COMMAND_PREFIX}dk')
+      x = (self.dk_reset - datetime.datetime.now()).total_seconds()
+      self.dk_reset += datetime.timedelta(seconds=config.DK_DURATION_SECS)
+      print(f'wait for dk sleeping for {x} seconds till next dk reset')
+      await asyncio.sleep(x)
+      self.dk_available = True
+  
+  async def wait_for_p(self):
+    if not self.pokemon_channel: return
+    while True:
+      if self.p_available:
+        await self.pokemon_channel.send(f'{config.COMMAND_PREFIX}p')
+      print(f'wait for {config.P_DURATION_SECS} secsonds pokemon roll reset')
+      await asyncio.sleep(config.P_DURATION_SECS)
+      self.p_available = True
   
   def check_roll(self, message):
     if message.author.id != config.MUDAE_ID or\

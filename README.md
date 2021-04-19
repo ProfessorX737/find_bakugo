@@ -1,5 +1,5 @@
 # Find Bakugo
-Self-discord bot to automatically claim stong wamen and bakugo on mudae
+Self-discord bot to automatically claim stong wamen and bakugo on mudae.  
 Under development. Basic rolling and claiming. Friendly wish behaviour
 
 ## Installation

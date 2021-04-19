@@ -25,6 +25,8 @@ info = {
   'claim_available': None,
   'num_rolls': 0,
   'rolls_reset': None,
+  'daily_available': False,
+  'daily_reset': None
 }
 
 @bot.event
@@ -35,6 +37,9 @@ async def on_ready():
 
   non_roll_channel = bot.get_channel(conf.NON_ROLL_CHANNEL_ID)
   roll_channel = bot.get_channel(conf.ROLL_CHANNEL_ID)
+  pokemon_channel = None
+  if conf.POKEMON_CHANNEL_ID:
+    pokemon_channel =  bot.get_channel(conf.POKEMON_CHANNEL_ID)
 
   # send 'tu' command to initialise the times
   await non_roll_channel.send(f'{conf.COMMAND_PREFIX}tu')
@@ -45,11 +50,21 @@ async def on_ready():
     print("could not parse tu, try running bot again")
     sys.exit()
   else:
-    tasks = Tasks(bot, non_roll_channel, roll_channel,\
+    tasks = Tasks(bot, non_roll_channel, roll_channel, pokemon_channel,\
       info['claim_reset'], info['claim_available'],\
-        info['num_rolls'], info['rolls_reset'])
-    # run background tasks
+      info['num_rolls'], info['rolls_reset'],\
+      info['daily_available'], info['daily_reset'],\
+      info['dk_available'], info['dk_reset'],\
+      info['p_available'])
+    # loop to roll and claim
     bot.loop.create_task(tasks.wait_for_roll())
+    # loop to update claim availability
     bot.loop.create_task(tasks.wait_for_claim())
+    # loop for free daily kakera
+    bot.loop.create_task(tasks.wait_for_dk())
+    # loop for free daily roll
+    bot.loop.create_task(tasks.wait_for_daily())
+    # loop for pokemon rolls
+    bot.loop.create_task(tasks.wait_for_p())
 
 bot.run(conf.TOKEN, bot=False)

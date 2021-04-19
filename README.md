@@ -1,4 +1,4 @@
-# KAMINER 
+# Find Bakugo
 Self-discord bot to automatically claim stong wamen on mudae
 Under development. Basic rolling and claiming. Friendly wish behaviour
 

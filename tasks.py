@@ -7,13 +7,13 @@ import re
 class Tasks:
   def __init__(self, bot, non_roll_channel, roll_channel,\
     claim_reset, claim_available,\
-    num_rolls, rolls_reset):
+    num_rolls_left, rolls_reset):
     self.bot = bot
     self.non_roll_channel = non_roll_channel
     self.roll_channel = roll_channel
     self.claim_reset = claim_reset
     self.claim_available = claim_available
-    self.num_rolls = num_rolls
+    self.num_rolls_left = num_rolls_left
     self.rolls_reset = rolls_reset
     self.msgka = {}
 
@@ -87,10 +87,10 @@ class Tasks:
         x = (self.claim_reset - datetime.datetime.now()).total_seconds()
         print(f'waiting {x} seconds till next claim reset')
         await asyncio.sleep(x)
-      # empty the message_id => kakera map
+      # empty the message_id => {kakera, message} map
       self.msgka = {}
       # start rolling
-      for i in range(config.NUM_ROLLS):
+      for i in range(self.num_rolls_left):
         await asyncio.sleep(config.ROLL_DELAY_SECS)
         # don't roll if we don't have a claim
         if not self.claim_available: break
@@ -102,14 +102,6 @@ class Tasks:
           message = await self.bot.wait_for('message', check=self.check_roll, timeout=config.MESSAGE_WAIT_SECS)
         except asyncio.TimeoutError:
           print('could not find mudae roll response')
-          # get seconds till rolls reset
-          x = (self.rolls_reset - datetime.datetime.now()).total_seconds()
-          # set next time to roll
-          self.rolls_reset += datetime.timedelta(seconds=config.ROLLS_DURATION_SECS)
-          # sleep until ready to roll
-          print(f'waiting {x} seconds till next set of rolls')
-          await asyncio.sleep(x)
-          break
         else:
           roll = self.parse_roll(message)
           # continue if roll is not claimable
@@ -134,17 +126,23 @@ class Tasks:
           # else roll is claimable but not worth enough to claim immediately
           else:
             # add roll to message_id => kakera map
-            self.msgka[message.id] = roll['kakera']
-      # continue if no claim or not last set of rolls or empty dict
-      if not self.claim_available: continue
+            self.msgka[message.id] = [roll['kakera'], message]
       x = (self.claim_reset - datetime.datetime.now()).total_seconds()
-      if x > config.ROLLS_DURATION_SECS: continue
-      if len(self.msgka) == 0: continue
-      # claim the most expensive character found for the $$
-      print("Attempting to claim because last set of rolls till next claim reset")
-      msg_id = sorted(self.msgka, key=lambda x: self.msgka[x])[-1]
-      msg = await self.roll_channel.fetch_message(msg_id)
-      await self.claim_waifu(msg)
+      # if last set of rolls till next claim reset then claim most expensive
+      if self.claim_available and x < config.ROLLS_DURATION_SECS and len(self.msgka) > 0:
+        # claim the most expensive character found for the $$
+        print("Attempting to claim because last set of rolls till next claim reset")
+        msg_id = sorted(self.msgka, key=lambda x: self.msgka[x][0])[-1]
+        await self.claim_waifu(self.msgka[msg_id][1])
+
+      # get seconds till rolls reset
+      x = (self.rolls_reset - datetime.datetime.now()).total_seconds()
+      # set next time to roll
+      self.rolls_reset += datetime.timedelta(seconds=config.ROLLS_DURATION_SECS)
+      # sleep until ready to roll
+      print(f'waiting {x} seconds till next set of rolls')
+      await asyncio.sleep(x)
+      self.num_rolls_left = config.NUM_ROLLS
 
 
 

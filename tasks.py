@@ -44,13 +44,14 @@ class Tasks:
     name = embed.author.name
     desc = embed.description.split("\n")
     # if last line of desc is not the following then roll is not claimable
-    if desc[-1] != 'React with any emoji to claim!': return False
+    if 'React with any emoji to claim' not in desc[-1]: return False
     # TODO series name may be split into multiple lines, do a join instead
     series = desc[0]
-    # extract the kakera value
-    match = re.search(r'^\*\*(\d+)\*\*<:kakera:', desc[1])
+    # extract the kakera value. It is usually the second last line in desc
+    match = re.search(r'^\*\*(\d+)\*\*<:kakera:', desc[-2])
     kakera = 0
     if match: kakera = int(match.group(1))
+    print(f'worth {kakera} kakera')
     return {
       'name': name,
       'series': series,

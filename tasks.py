@@ -82,8 +82,8 @@ class Tasks:
     while True:
       # if cannot claim wait for next claim reset 
       if not self.claim_available:
-        # the rolls reset same time as claim reset
-        self.rolls_reset = self.claim_reset
+        # the next rolls reset to be claim reset + rolls duration
+        self.rolls_reset = self.claim_reset + datetime.timedelta(seconds=config.ROLLS_DURATION_SECS)
         x = (self.claim_reset - datetime.datetime.now()).total_seconds()
         print(f'waiting {x} seconds till next claim reset')
         await asyncio.sleep(x)
@@ -136,7 +136,7 @@ class Tasks:
         await self.claim_waifu(self.msgka[msg_id][1])
 
       # get seconds till rolls reset
-      x = (self.rolls_reset - datetime.datetime.now()).total_seconds()
+      x = (self.rolls_reset - datetime.datetime.now()).total_seconds() + 5
       # set next time to roll
       self.rolls_reset += datetime.timedelta(seconds=config.ROLLS_DURATION_SECS)
       # sleep until ready to roll

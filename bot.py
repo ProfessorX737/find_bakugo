@@ -27,16 +27,19 @@ info = {
   'rolls_reset': None,
 }
 
-
 @bot.event
 async def on_ready():
   global info, tasks, non_roll_channel, roll_channel, user
+
   print(f'Bot connected as {bot.user.name}')
+
   non_roll_channel = bot.get_channel(conf.NON_ROLL_CHANNEL_ID)
   roll_channel = bot.get_channel(conf.ROLL_CHANNEL_ID)
+
+  # send 'tu' command to initialise the times
   await non_roll_channel.send(f'{conf.COMMAND_PREFIX}tu')
   try:
-    message = await bot.wait_for('message', check=parse_tu, timeout=3)
+    message = await bot.wait_for('message', check=parse_tu, timeout=conf.MESSAGE_WAIT_SECS)
     info = parse_tu(message)
   except asyncio.TimeoutError:
     print("could not parse tu, try running bot again")
@@ -45,27 +48,8 @@ async def on_ready():
     tasks = Tasks(bot, non_roll_channel, roll_channel,\
       info['claim_reset'], info['claim_available'],\
         info['num_rolls'], info['rolls_reset'])
+    # run background tasks
     bot.loop.create_task(tasks.wait_for_roll())
     bot.loop.create_task(tasks.wait_for_claim())
-
-# async def parse_roll(message):
-#   raise Exception("")
-
-# async def loop():
-#   while True:
-#     try:
-#       message = await bot.wait_for('message', check=parse_tu, timeout=3)
-#     except Exception as err:
-
-#     else:
-
-# @bot.event
-# async def on_message(message):
-#   print(message)
-
-
-@bot.command(name='chicken')
-async def fetchServerInfo(ctx):
-  await ctx.send("hello there")
 
 bot.run(conf.TOKEN, bot=False)

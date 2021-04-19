@@ -142,7 +142,7 @@ class Tasks:
       # claim the most expensive character found for the $$
       print("Attempting to claim because last set of rolls till next claim reset")
       msg_id = sorted(self.msgka, key=lambda x: self.msgka[x])[-1]
-      msg = await self.bot.get_message(msg_id)
+      msg = await self.roll_channel.fetch_message(msg_id)
       await self.claim_waifu(msg)
 
 

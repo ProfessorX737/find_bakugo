@@ -54,9 +54,6 @@ def parse_tu(message):
     if match:
       dk_available = True
       dk_reset = datetime.datetime.now() + datetime.timedelta(minutes=conf.DK_DURATION_SECS + 10)
-  # detect if pokemon roll is available
-  p_available = False
-  if '$p is available' in message.content: p_available = True
 
   timing_info = {
     'claim_reset': datetime.datetime.now() + datetime.timedelta(minutes=claim_min),
@@ -66,8 +63,7 @@ def parse_tu(message):
     'daily_available': daily_available,
     'daily_reset': daily_reset,
     'dk_available': dk_available,
-    'dk_reset': dk_reset,
-    'p_available': p_available,
+    'dk_reset': dk_reset
   }
   return timing_info
 

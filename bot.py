@@ -54,8 +54,7 @@ async def on_ready():
       info['claim_reset'], info['claim_available'],\
       info['num_rolls'], info['rolls_reset'],\
       info['daily_available'], info['daily_reset'],\
-      info['dk_available'], info['dk_reset'],\
-      info['p_available'])
+      info['dk_available'], info['dk_reset'])
     # loop to roll and claim
     bot.loop.create_task(tasks.wait_for_roll())
     # loop to update claim availability

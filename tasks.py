@@ -9,7 +9,7 @@ class Tasks:
     claim_reset, claim_available,\
     num_rolls_left, rolls_reset,\
     daily_available, daily_reset,\
-    dk_available, dk_reset, p_available):
+    dk_available, dk_reset):
     self.bot = bot
     self.non_roll_channel = non_roll_channel
     self.roll_channel = roll_channel
@@ -22,7 +22,6 @@ class Tasks:
     self.daily_reset = daily_reset
     self.dk_available = dk_available
     self.dk_reset = dk_reset
-    self.p_available = p_available
     self.msgka = {}
 
   async def wait_for_claim(self):
@@ -36,6 +35,7 @@ class Tasks:
     if not self.daily_available and not self.daily_reset: return
     while True:
       if self.daily_available:
+        print('attempting to get free daily roll')
         await self.non_roll_channel.send(f'{config.COMMAND_PREFIX}daily')
       x = (self.daily_reset - datetime.datetime.now()).total_seconds()
       self.daily_reset += datetime.timedelta(seconds=config.DAILY_DURATION_SECS)
@@ -47,26 +47,28 @@ class Tasks:
     if not self.dk_available and not self.dk_reset: return
     while True:
       if self.dk_available:
+        print('attempting to get free daily kakera')
         await self.non_roll_channel.send(f'{config.COMMAND_PREFIX}dk')
       x = (self.dk_reset - datetime.datetime.now()).total_seconds()
       self.dk_reset += datetime.timedelta(seconds=config.DK_DURATION_SECS)
-      print(f'wait for dk sleeping for {x} seconds till next dk reset')
+      print(f'dk sleeping for {x} seconds for reset')
       await asyncio.sleep(x)
       self.dk_available = True
   
   async def wait_for_p(self):
     if not self.pokemon_channel: return
     while True:
-      if self.p_available:
-        await self.pokemon_channel.send(f'{config.COMMAND_PREFIX}p')
-      print(f'wait for {config.P_DURATION_SECS} secsonds pokemon roll reset')
+      print('attempting to do a pokemon roll')
+      await self.pokemon_channel.send(f'{config.COMMAND_PREFIX}p')
+      print(f'wait for {config.P_DURATION_SECS} seconds for pokemon roll reset')
       await asyncio.sleep(config.P_DURATION_SECS)
-      self.p_available = True
   
   def check_roll(self, message):
-    if message.author.id != config.MUDAE_ID or\
+    isNotOk = message.author.id != config.MUDAE_ID or\
       message.channel.id != config.ROLL_CHANNEL_ID or\
-      len(message.embeds) != 1:
+      len(message.embeds) != 1
+    if isNotOk:
+      print(message)
       return False
     desc = message.embeds[0].description
     # if someone is looking up a character using 'im' then it will
@@ -77,11 +79,16 @@ class Tasks:
   # assume valid roll message
   # return true if we want to claim this roll immediately otherwise false
   # if not claimed append to map message.id => kakera value
-  def parse_roll(self, message):
+  async def parse_roll(self, message):
     # parse the roll to get the name, series and kakera value
     embed = message.embeds[0]
     name = embed.author.name
     desc = embed.description
+    footer = embed.footer.text
+    if footer and 'Belongs to' in footer:
+      print('Attempting to get kakera from claimed character')
+      await message.add_reaction(config.REACT_EMOJI)
+      return False
     # if last line of desc is not the following then roll is not claimable
     #if 'React with any emoji to claim' not in desc[-1]: return False
     # TODO series name may be split into multiple lines, do a join instead
@@ -133,16 +140,16 @@ class Tasks:
         await asyncio.sleep(config.ROLL_DELAY_SECS)
         # don't roll if we don't have a claim
         if not self.claim_available: break
-        # send the roll command
-        await self.roll_channel.send(f'{config.COMMAND_PREFIX}{config.ROLL_COMMAND}')
         print(f'roll {i+1}')
         try:
+          # send the roll command
+          await self.roll_channel.send(f'{config.COMMAND_PREFIX}{config.ROLL_COMMAND}')
           # wait for response from mudae
           message = await self.bot.wait_for('message', check=self.check_roll, timeout=config.MESSAGE_WAIT_SECS)
         except asyncio.TimeoutError:
           print('could not find mudae roll response')
         else:
-          roll = self.parse_roll(message)
+          roll = await self.parse_roll(message)
           # continue if roll is not claimable
           if not roll: continue
           # if roll is a wish
@@ -154,8 +161,7 @@ class Tasks:
             # else is someone else's wish
             else:
               # wait some time before claiming for them
-              await self.roll_channel.send(f'Will claim wish in {config.OTHERS_WISH_WAIT_SECS}\
-                secs if no one claims')
+              await self.roll_channel.send(f'Will claim wish in {config.OTHERS_WISH_WAIT_SECS} secs if no one claims')
               await asyncio.sleep(config.OTHERS_WISH_WAIT_SECS)
               await self.claim_waifu(message)
           # else if it is an expensive character then claim

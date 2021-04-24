@@ -111,8 +111,9 @@ class Tasks:
     return True
   
   async def claim_waifu(self, message):
-    await message.add_reaction(config.REACT_EMOJI)
     try:
+      # attempt to claim the character on a different thread
+      self.bot.loop.create_task(message.add_reaction(config.REACT_EMOJI))
       # wait for mudae to confirm whether I was able to claim
       res = await self.bot.wait_for('message', check=self.check_claimed, timeout=config.MESSAGE_WAIT_SECS)
     except asyncio.TimeoutError:

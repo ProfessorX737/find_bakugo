@@ -67,9 +67,7 @@ class Tasks:
     isNotOk = message.author.id != config.MUDAE_ID or\
       message.channel.id != config.ROLL_CHANNEL_ID or\
       len(message.embeds) != 1
-    if isNotOk:
-      print(message)
-      return False
+    if isNotOk: return False
     desc = message.embeds[0].description
     # if someone is looking up a character using 'im' then it will
     # contain words 'Claim Rank' in the desc so ignore this message
@@ -97,7 +95,7 @@ class Tasks:
     match = re.search(r'\*\*(\d+)\*\*<:kakera:', desc)
     kakera = 0
     if match: kakera = int(match.group(1))
-    print(f'worth {kakera} kakera')
+    print(f'{name} worth {kakera} kakera')
     return {
       'name': name,
       'series': series,
@@ -142,8 +140,8 @@ class Tasks:
         if not self.claim_available: break
         print(f'roll {i+1}')
         try:
-          # send the roll command
-          await self.roll_channel.send(f'{config.COMMAND_PREFIX}{config.ROLL_COMMAND}')
+          # send the roll command but on a different thread
+          self.bot.loop.create_task(self.roll_channel.send(f'{config.COMMAND_PREFIX}{config.ROLL_COMMAND}'))
           # wait for response from mudae
           message = await self.bot.wait_for('message', check=self.check_roll, timeout=config.MESSAGE_WAIT_SECS)
         except asyncio.TimeoutError:

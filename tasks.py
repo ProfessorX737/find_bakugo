@@ -112,6 +112,8 @@ class Tasks:
   
   async def claim_waifu(self, message):
     try:
+      # sleep for claim_delay_secs before claiming
+      await asyncio.sleep(config.CLAIM_DELAY_SECS)
       # attempt to claim the character on a different thread
       self.bot.loop.create_task(message.add_reaction(config.REACT_EMOJI))
       # wait for mudae to confirm whether I was able to claim
@@ -171,6 +173,7 @@ class Tasks:
           else:
             # add roll to message_id => kakera map
             self.msgka[message.id] = [roll['kakera'], message]
+      
       x = (self.claim_reset - datetime.datetime.now()).total_seconds()
       # if last set of rolls till next claim reset then claim most expensive
       if self.claim_available and x < config.ROLLS_DURATION_SECS and len(self.msgka) > 0:

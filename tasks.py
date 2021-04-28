@@ -111,19 +111,22 @@ class Tasks:
     return True
   
   async def claim_waifu(self, message):
-    try:
-      # sleep for claim_delay_secs before claiming
-      await asyncio.sleep(config.CLAIM_DELAY_SECS)
-      # attempt to claim the character on a different thread
-      self.bot.loop.create_task(message.add_reaction(config.REACT_EMOJI))
-      # wait for mudae to confirm whether I was able to claim
-      res = await self.bot.wait_for('message', check=self.check_claimed, timeout=config.MESSAGE_WAIT_SECS)
-    except asyncio.TimeoutError:
-      return False
-    else:
-      # if claim was successful then set claim_available to true
-      self.claim_available = False
-      return True
+    for emoji in config.REACT_EMOJIS:
+      try:
+        # sleep for claim_delay_secs before claiming
+        await asyncio.sleep(config.CLAIM_DELAY_SECS)
+        # attempt to claim the character on a different thread
+        self.bot.loop.create_task(message.add_reaction(emoji))
+        # wait for mudae to confirm whether I was able to claim
+        res = await self.bot.wait_for('message', check=self.check_claimed, timeout=config.MESSAGE_WAIT_SECS)
+      except asyncio.TimeoutError:
+        print('Failed to claim...')
+      else:
+        print('Successful claim')
+        # if claim was successful then set claim_available to true
+        self.claim_available = False
+        return True
+    return False
   
   async def wait_for_roll(self):
     while True:
@@ -149,6 +152,7 @@ class Tasks:
           message = await self.bot.wait_for('message', check=self.check_roll, timeout=config.MESSAGE_WAIT_SECS)
         except asyncio.TimeoutError:
           print('could not find mudae roll response')
+          break
         else:
           roll = await self.parse_roll(message)
           # continue if roll is not claimable

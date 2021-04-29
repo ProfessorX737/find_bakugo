@@ -85,7 +85,7 @@ class Tasks:
     footer = embed.footer.text
     if footer and 'Belongs to' in footer:
       print('Attempting to get kakera from claimed character')
-      await message.add_reaction(config.REACT_EMOJI)
+      await message.add_reaction(config.REACT_EMOJIS[0])
       return False
     # if last line of desc is not the following then roll is not claimable
     #if 'React with any emoji to claim' not in desc[-1]: return False
